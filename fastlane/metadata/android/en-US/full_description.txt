@@ -1,4 +1,4 @@
-The Home Assistant Companion app allows you to access your Home Assistant instance on the go. Home Assistant is the smart home solution focused on privacy, choice, and sustainability. It runs locally in your home via a device like the Home Assistant Green or Raspberry Pi.
+The MySmartHomes app allows you to access your Home Assistant instance on the go. Home Assistant is the smart home solution focused on privacy, choice, and sustainability. It runs locally in your home via a device like the Home Assistant Green or Raspberry Pi.
 
 This app connects to all the most powerful features of Home Assistant,
 - One app to control the whole home - Home Assistant is compatible with the biggest brands in the smart home, connecting to thousands of smart devices and services.
