@@ -1,8 +1,8 @@
 [versions]
 activity-compose = "1.9.2"
 androidBeaconLibrary = "2.20.6"
-androidPlugin = "8.6.1"
-androidSdk-compile = "35"
+androidPlugin = "8.5.0"
+androidSdk-compile = "34"
 androidSdk-min = "21"
 androidSdk-target = "34"
 androidSdk-automotive-min = "29"
