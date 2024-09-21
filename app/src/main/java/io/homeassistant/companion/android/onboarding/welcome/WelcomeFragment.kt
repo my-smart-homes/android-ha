@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import io.homeassistant.companion.android.R
 import io.homeassistant.companion.android.onboarding.discovery.DiscoveryFragment
+import io.homeassistant.companion.android.onboarding.login.LoginFragment
 import io.homeassistant.companion.android.onboarding.manual.ManualSetupFragment
 import io.homeassistant.companion.android.util.compose.HomeAssistantAppTheme
 
@@ -31,6 +32,15 @@ class WelcomeFragment : Fragment() {
     }
 
     private fun welcomeNavigation() {
+        // goes to login
+        parentFragmentManager
+            .beginTransaction()
+            .replace(R.id.content, LoginFragment::class.java, null)
+            .addToBackStack("Login")
+            .commit()
+
+        // went to discover fragment
+        /*
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             parentFragmentManager
                 .beginTransaction()
@@ -44,5 +54,6 @@ class WelcomeFragment : Fragment() {
                 .addToBackStack("Welcome")
                 .commit()
         }
+        */
     }
 }
