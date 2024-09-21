@@ -118,6 +118,7 @@ android {
 
 dependencies {
     implementation(project(":common"))
+    implementation(libs.firebase.auth.ktx)
 
     coreLibraryDesugaring(libs.tools.desugar.jdk)
 
@@ -190,6 +191,8 @@ dependencies {
 
     implementation(libs.car.core)
     "fullImplementation"(libs.car.projected)
+
+    implementation("com.google.firebase:firebase-auth:21.1.0")
 }
 
 // Disable to fix memory leak and be compatible with the configuration cache.
