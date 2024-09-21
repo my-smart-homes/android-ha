@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.PowerManager
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
+import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
 import io.homeassistant.companion.android.common.data.keychain.KeyChainRepository
 import io.homeassistant.companion.android.common.data.prefs.PrefsRepository
@@ -51,6 +52,7 @@ open class HomeAssistantApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        FirebaseApp.initializeApp(this)
 
         registerActivityLifecycleCallbacks(LifecycleHandler)
 

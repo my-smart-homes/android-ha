@@ -193,6 +193,7 @@ dependencies {
     "fullImplementation"(libs.car.projected)
 
     implementation("com.google.firebase:firebase-auth:21.1.0")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.4.1")
 }
 
 // Disable to fix memory leak and be compatible with the configuration cache.
