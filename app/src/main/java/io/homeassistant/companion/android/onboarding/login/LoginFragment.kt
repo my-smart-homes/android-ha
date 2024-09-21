@@ -9,18 +9,24 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import io.homeassistant.companion.android.util.compose.HomeAssistantAppTheme
 import android.util.Patterns
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.google.firebase.auth.FirebaseAuth
 
 
 class LoginFragment : Fragment() {
 
+    private var isLoading by mutableStateOf(false)
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+
         return ComposeView(requireContext()).apply {
             setContent {
                 HomeAssistantAppTheme {
                     LoginView(
-                        onLoginClick = { username, password -> loginUserWithFirebase(username, password)
-                        }
+                        onLoginClick = { username, password -> loginUserWithFirebase(username, password)},
+                        isLoading = isLoading
                     )
                 }
             }
@@ -29,10 +35,11 @@ class LoginFragment : Fragment() {
 
     private fun loginUserWithFirebase(username: String, password: String) {
         val auth = FirebaseAuth.getInstance()
-
+        isLoading = true
         if (validateCredentials(username, password)) {
             auth.signInWithEmailAndPassword(username, password)
                 .addOnCompleteListener { task ->
+                    isLoading = false
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_LONG).show()
                     } else {

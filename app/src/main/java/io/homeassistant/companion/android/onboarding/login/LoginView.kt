@@ -15,11 +15,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.ui.res.stringResource
+import io.homeassistant.companion.android.R
 
 @Composable
 fun LoginView(
-    onLoginClick: (String, String) -> Unit
+    onLoginClick: (String, String) -> Unit,
+    isLoading: Boolean = false
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -33,7 +36,7 @@ fun LoginView(
     ) {
         // Title at the top
         Text(
-            text = "MySmartHomes",
+            text = stringResource(io.homeassistant.companion.android.common.R.string.app_name),
             modifier = Modifier.align(Alignment.CenterHorizontally),
             style = TextStyle(fontSize = 24.sp) // Set the text size for the title
         )
@@ -68,11 +71,17 @@ fun LoginView(
                 ),
                 visualTransformation = PasswordVisualTransformation()
             )
-            Button(
-                onClick = { onLoginClick(email, password) },
-                modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally).padding(vertical = 3.dp)
-            ) {
-                Text("Login")
+            if(isLoading){
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+            }else{
+                Button(
+                    onClick = { onLoginClick(email, password) },
+                    modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally).padding(vertical = 3.dp)
+                ) {
+                    Text("Login")
+                }
             }
         }
 
