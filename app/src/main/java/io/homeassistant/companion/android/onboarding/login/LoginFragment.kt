@@ -1,5 +1,6 @@
 package io.homeassistant.companion.android.onboarding.login
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.firebase.auth.FirebaseAuth
+import io.homeassistant.companion.android.R
+import io.homeassistant.companion.android.onboarding.discovery.DiscoveryFragment
+import io.homeassistant.companion.android.onboarding.manual.ManualSetupFragment
 
 
 class LoginFragment : Fragment() {
@@ -42,10 +46,27 @@ class LoginFragment : Fragment() {
                     isLoading = false
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_LONG).show()
+                        loginNavigation()
                     } else {
                         Toast.makeText(requireContext(), "Authentication failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                     }
                 }
+        }
+    }
+
+    private fun loginNavigation() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            parentFragmentManager
+                .beginTransaction()
+                .replace(R.id.content, DiscoveryFragment::class.java, null)
+                .addToBackStack("Welcome")
+                .commit()
+        } else {
+            parentFragmentManager
+                .beginTransaction()
+                .replace(R.id.content, ManualSetupFragment::class.java, null)
+                .addToBackStack("Welcome")
+                .commit()
         }
     }
 
