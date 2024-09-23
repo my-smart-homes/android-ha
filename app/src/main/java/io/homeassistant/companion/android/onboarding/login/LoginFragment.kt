@@ -63,9 +63,9 @@ class LoginFragment : Fragment() {
                             Log.d("Firestore", "Webview Password: ${webviewCredentials.password}")
 
                             // Save credentials to UserSession
-                            UserSession.externalUrl = webviewCredentials.externalUrl
-                            UserSession.webviewUsername = webviewCredentials.username
-                            UserSession.webviewPassword = webviewCredentials.password
+                            HassioUserSession.externalUrl = webviewCredentials.externalUrl
+                            HassioUserSession.webviewUsername = webviewCredentials.username
+                            HassioUserSession.webviewPassword = webviewCredentials.password
 
                             loginNavigation() // Proceed with the next step
                         } else {
