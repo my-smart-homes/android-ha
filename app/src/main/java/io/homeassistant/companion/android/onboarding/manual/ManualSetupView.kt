@@ -2,6 +2,7 @@ package io.homeassistant.companion.android.onboarding.manual
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -9,9 +10,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.mikepenz.iconics.typeface.library.community.material.CommunityMaterial
 import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.onboarding.OnboardingHeaderView
+import io.homeassistant.companion.android.onboarding.login.HassioUserSession
 
 @Composable
 fun ManualSetupView(
@@ -37,6 +42,17 @@ fun ManualSetupView(
 ) {
     val scrollState = rememberScrollState()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val isLoading = remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val externalUrl = HassioUserSession.externalUrl ?: ""
+        if (externalUrl.isNotEmpty() && isLoading.value == true) {
+            manualUrl.value = externalUrl
+            connectedClicked()  // Automatically trigger the connect button
+            isLoading.value = false  // Hide overlay after URL is set
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -80,6 +96,15 @@ fun ManualSetupView(
                 .padding(16.dp)
         ) {
             Text(stringResource(commonR.string.connect))
+        }
+    }
+
+    if (isLoading.value) {
+        Surface(
+            color = MaterialTheme.colors.background.copy(alpha = 0.9f),  // Respect theme's background color
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Overlay content can be added here (like a progress indicator)
         }
     }
 }

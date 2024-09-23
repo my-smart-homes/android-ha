@@ -53,7 +53,9 @@ class LoginFragment : Fragment() {
                     auth.signInWithEmailAndPassword(username, password).await()
                     val userId = auth.currentUser?.uid
                     isLoading = false
-
+                    CoroutineScope(Dispatchers.Main).launch {
+                        Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
+                    }
                     if (userId != null) {
                         // Fetch the external URL, webview username, and password from Firebase
                         val webviewCredentials = getWebViewCredentials(userId)
@@ -85,7 +87,7 @@ class LoginFragment : Fragment() {
     }
 
     private fun loginNavigation() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && HassioUserSession.externalUrl == null) {
             parentFragmentManager
                 .beginTransaction()
                 .replace(R.id.content, DiscoveryFragment::class.java, null)
