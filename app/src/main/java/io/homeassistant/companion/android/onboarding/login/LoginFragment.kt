@@ -19,6 +19,10 @@ import io.homeassistant.companion.android.R
 import io.homeassistant.companion.android.onboarding.discovery.DiscoveryFragment
 import io.homeassistant.companion.android.onboarding.manual.ManualSetupFragment
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class LoginFragment : Fragment() {
 
@@ -39,43 +43,44 @@ class LoginFragment : Fragment() {
     }
 
     private fun loginUserWithFirebase(username: String, password: String) {
-
-        val auth = FirebaseAuth.getInstance()
-
         if (validateCredentials(username, password)) {
             isLoading = true
-            auth.signInWithEmailAndPassword(username, password)
-                .addOnCompleteListener { task ->
+            val auth = FirebaseAuth.getInstance()
+
+            // Use coroutines to handle Firebase calls
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    auth.signInWithEmailAndPassword(username, password).await()
+                    val userId = auth.currentUser?.uid
                     isLoading = false
-                    if (task.isSuccessful) {
-                        Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_LONG).show()
-                        val userId = auth.currentUser?.uid
-                        if (userId != null) {
-                            getExternalUrl(userId) { externalUrl ->
-                                if (externalUrl != null) {
-                                    getExternalUrl(userId) { externalUrl ->
-                                        if (externalUrl != null) {
-                                            Log.d("Firestore", "External URL: $externalUrl")
-                                            // Handle the external URL here (e.g., show a Toast or navigate)
-                                            Toast.makeText(requireContext(), "External URL: $externalUrl", Toast.LENGTH_LONG).show()
-                                            loginNavigation()
-                                        } else {
-                                            Log.d("Firestore", "No external URL found for this user.")
-                                        }
-                                    }
-                                    Log.d("Firestore", "External URL: $externalUrl")
-                                } else {
-                                    Log.d("Firestore", "No external URL found for this user.")
-                                }
-                            }
+
+                    if (userId != null) {
+                        // Fetch the external URL, webview username, and password from Firebase
+                        val webviewCredentials = getWebViewCredentials(userId)
+                        if (webviewCredentials != null) {
+                            Log.d("Firestore", "External URL: ${webviewCredentials.externalUrl}")
+                            Log.d("Firestore", "Webview Username: ${webviewCredentials.username}")
+                            Log.d("Firestore", "Webview Password: ${webviewCredentials.password}")
+
+                            // Save credentials to UserSession
+                            UserSession.externalUrl = webviewCredentials.externalUrl
+                            UserSession.webviewUsername = webviewCredentials.username
+                            UserSession.webviewPassword = webviewCredentials.password
+
+                            loginNavigation() // Proceed with the next step
                         } else {
-                            Log.d("FirebaseAuth", "User ID is null after login.")
+                            Log.d("Firestore", "No webview credentials found for this user.")
                         }
-//                       loginNavigation()
                     } else {
-                        Toast.makeText(requireContext(), "Authentication failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                        Log.d("FirebaseAuth", "User ID is null after login.")
+                    }
+                } catch (e: Exception) {
+                    isLoading = false
+                    CoroutineScope(Dispatchers.Main).launch {
+                        Toast.makeText(requireContext(), "Authentication failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
+            }
         }
     }
 
@@ -113,27 +118,25 @@ class LoginFragment : Fragment() {
         }
     }
 
-    fun getExternalUrl(userId: String, callback: (String?) -> Unit) {
-        val db = FirebaseFirestore.getInstance()
-        val userRef = db.collection("users").document(userId)
+    data class WebviewCredentials(val externalUrl: String?, val username: String?, val password: String?)
 
-        // Fetch the document
-        userRef.get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    // Get the 'external_url' field as a String
-                    val externalUrl = document.getString("external_url")
-                    // Return the value via the callback
-                    callback(externalUrl)
-                } else {
-                    Log.d("Firestore", "No such document.")
-                    callback(null)  // No document found
-                }
+    private suspend fun getWebViewCredentials(userId: String): WebviewCredentials? {
+        val db = FirebaseFirestore.getInstance()
+        return try {
+            val document = db.collection("users").document(userId).get().await()
+            if (document.exists()) {
+                val externalUrl = document.getString("external_url")
+                val webviewUsername = document.getString("webview_username")
+                val webviewPassword = document.getString("webview_password")
+                WebviewCredentials(externalUrl, webviewUsername, webviewPassword)
+            } else {
+                Log.d("Firestore", "No such document.")
+                null
             }
-            .addOnFailureListener { exception ->
-                Log.d("Firestore", "Error getting document: ", exception)
-                callback(null)  // Error occurred
-            }
+        } catch (e: Exception) {
+            Log.d("Firestore", "Error getting document: ", e)
+            null
+        }
     }
 
 }
