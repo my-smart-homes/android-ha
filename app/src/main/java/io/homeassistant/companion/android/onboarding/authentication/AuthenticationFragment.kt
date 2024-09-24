@@ -30,6 +30,7 @@ import io.homeassistant.companion.android.common.data.authentication.impl.Authen
 import io.homeassistant.companion.android.common.data.keychain.KeyChainRepository
 import io.homeassistant.companion.android.onboarding.OnboardingViewModel
 import io.homeassistant.companion.android.onboarding.integration.MobileAppIntegrationFragment
+import io.homeassistant.companion.android.onboarding.login.HassioUserSession
 import io.homeassistant.companion.android.themes.ThemesManager
 import io.homeassistant.companion.android.util.TLSWebViewClient
 import io.homeassistant.companion.android.util.compose.HomeAssistantAppTheme
@@ -38,6 +39,7 @@ import javax.inject.Inject
 import javax.inject.Named
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import org.json.JSONObject
 
 @AndroidEntryPoint
 class AuthenticationFragment : Fragment() {
@@ -72,11 +74,21 @@ class AuthenticationFragment : Fragment() {
                             themesManager.setThemeForWebView(requireContext(), settings)
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
+                            WebView.setWebContentsDebuggingEnabled(true)
+                            settings.userAgentString = settings.userAgentString + " ${HomeAssistantApis.USER_AGENT_STRING}"
                             settings.userAgentString = settings.userAgentString + " ${HomeAssistantApis.USER_AGENT_STRING}"
                             webViewClient = object : TLSWebViewClient(keyChainRepository) {
                                 @Deprecated("Deprecated in Java")
                                 override fun shouldOverrideUrlLoading(view: WebView?, url: String): Boolean {
                                     return onRedirect(url)
+                                }
+
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    super.onPageFinished(view, url)
+                                    Log.d(TAG, "onPageFinished: $url");
+
+                                    // Inject JavaScript to auto-fill username, password and click login button
+                                    injectAutoLoginScript(view)
                                 }
 
                                 @RequiresApi(Build.VERSION_CODES.M)
@@ -246,4 +258,65 @@ class AuthenticationFragment : Fragment() {
             .show()
         parentFragmentManager.popBackStack()
     }
+
+    private fun injectAutoLoginScript(webView: WebView?) {
+        val username = HassioUserSession.webviewUsername ?: ""
+        val password = HassioUserSession.webviewPassword ?: ""
+
+        val escapedUsername = JSONObject.quote(username)
+        val escapedPassword = JSONObject.quote(password)
+
+        val jsScript = """
+            (function() {
+     let found = false;
+
+     function checkInputElement() {
+        if(found){
+            return;
+        }
+
+        var inputElement = document.querySelector('input[name="username"]');
+        if (inputElement) {
+            found = true;
+            console.log("Input element found");
+            doSignIn();
+        } else {
+            console.log("Input element not found");
+        }
+    }
+
+    function doSignIn(){
+        var usernameInput = document.querySelector('input[name="username"]');
+        var passwordInput = document.querySelector('input[name="password"]');
+        var loginButton = document.querySelector('mwc-button');
+
+        usernameInput.value = $escapedUsername;
+        var usernameEvent = new Event('input', { bubbles: true });
+        usernameInput.dispatchEvent(usernameEvent);
+
+        passwordInput.value = $escapedPassword;
+        var passwordEvent = new Event('input', { bubbles: true });
+        passwordInput.dispatchEvent(passwordEvent);
+
+         var clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        loginButton.dispatchEvent(clickEvent);
+    }
+
+    setInterval(checkInputElement, 1000);
+})();
+    """.trimIndent()
+
+        Log.d(TAG, "Executing JavaScript: $jsScript")
+
+        webView?.evaluateJavascript(jsScript) { result ->
+            Log.d(TAG, "JavaScript execution result: $result")
+        }
+    }
+
+
+
 }
