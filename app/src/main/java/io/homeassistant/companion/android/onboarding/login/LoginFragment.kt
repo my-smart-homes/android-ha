@@ -53,13 +53,25 @@ class LoginFragment : Fragment() {
                     auth.signInWithEmailAndPassword(username, password).await()
                     val userId = auth.currentUser?.uid
                     isLoading = false
-                    CoroutineScope(Dispatchers.Main).launch {
-                        Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
-                    }
+
                     if (userId != null) {
                         // Fetch the external URL, webview username, and password from Firebase
                         val webviewCredentials = getWebViewCredentials(userId)
                         if (webviewCredentials != null) {
+                            val currentTime = System.currentTimeMillis()
+                            // Check expiration date
+                            if (webviewCredentials.expirationDate == null || webviewCredentials.expirationDate < currentTime) {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(requireContext(), "You don't have a subscription", Toast.LENGTH_LONG).show()
+                                }
+                                FirebaseAuth.getInstance().signOut()
+                                return@launch
+                            }
+
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
+                            }
+
                             Log.d("Firestore", "External URL: ${webviewCredentials.externalUrl}")
                             Log.d("Firestore", "Webview Username: ${webviewCredentials.username}")
                             Log.d("Firestore", "Webview Password: ${webviewCredentials.password}")
@@ -68,6 +80,7 @@ class LoginFragment : Fragment() {
                             HassioUserSession.externalUrl = webviewCredentials.externalUrl
                             HassioUserSession.webviewUsername = webviewCredentials.username
                             HassioUserSession.webviewPassword = webviewCredentials.password
+
 
                             loginNavigation() // Proceed with the next step
                         } else {
@@ -120,7 +133,12 @@ class LoginFragment : Fragment() {
         }
     }
 
-    data class WebviewCredentials(val externalUrl: String?, val username: String?, val password: String?)
+    data class WebviewCredentials(
+        val externalUrl: String?,
+        val username: String?,
+        val password: String?,
+        val expirationDate: Long?
+    )
 
     private suspend fun getWebViewCredentials(userId: String): WebviewCredentials? {
         val db = FirebaseFirestore.getInstance()
@@ -130,7 +148,8 @@ class LoginFragment : Fragment() {
                 val externalUrl = document.getString("external_url")
                 val webviewUsername = document.getString("webview_username")
                 val webviewPassword = document.getString("webview_password")
-                WebviewCredentials(externalUrl, webviewUsername, webviewPassword)
+                val expirationDate = document.getTimestamp("expirationDate")?.toDate()?.time
+                WebviewCredentials(externalUrl, webviewUsername, webviewPassword, expirationDate)
             } else {
                 Log.d("Firestore", "No such document.")
                 null
