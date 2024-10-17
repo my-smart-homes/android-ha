@@ -1,5 +1,7 @@
 package io.homeassistant.companion.android.onboarding.login
 
+import ServerTimeFetchService
+import ServerTimeFetchServiceImpl
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -44,21 +46,33 @@ class LoginFragment : Fragment() {
 
     private fun loginUserWithFirebase(username: String, password: String) {
         if (validateCredentials(username, password)) {
+            Log.d("Firestore", "loginUserWithFirebase")
             isLoading = true
             val auth = FirebaseAuth.getInstance()
-
+            val serverTimeService: ServerTimeFetchService = ServerTimeFetchServiceImpl()
             // Use coroutines to handle Firebase calls
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     auth.signInWithEmailAndPassword(username, password).await()
+                    Log.d("Firestore", "SignInSuccess")
+
                     val userId = auth.currentUser?.uid
                     isLoading = false
 
                     if (userId != null) {
                         // Fetch the external URL, webview username, and password from Firebase
                         val webviewCredentials = getWebViewCredentials(userId)
+
                         if (webviewCredentials != null) {
-                            val currentTime = System.currentTimeMillis()
+                            val currentTime = serverTimeService.fetchServerTime()
+
+                            if (currentTime == null) {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(requireContext(), "Failed to fetch server time", Toast.LENGTH_LONG).show()
+                                }
+                                return@launch
+                            }
+
                             // Check expiration date
                             if (webviewCredentials.expirationDate == null || webviewCredentials.expirationDate < currentTime) {
                                 CoroutineScope(Dispatchers.Main).launch {
@@ -80,7 +94,6 @@ class LoginFragment : Fragment() {
                             HassioUserSession.externalUrl = webviewCredentials.externalUrl
                             HassioUserSession.webviewUsername = webviewCredentials.username
                             HassioUserSession.webviewPassword = webviewCredentials.password
-
 
                             loginNavigation() // Proceed with the next step
                         } else {
