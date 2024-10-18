@@ -21,7 +21,7 @@ android {
     useLibrary("android.car")
 
     defaultConfig {
-        applicationId = "io.homeassistant.companion.android"
+        applicationId = "com.yildiz.MySmartHomes"
         minSdk = libs.versions.androidSdk.min.get().toInt()
         targetSdk = libs.versions.androidSdk.target.get().toInt()
 
