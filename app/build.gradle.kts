@@ -31,6 +31,11 @@ android {
         manifestPlaceholders["sentryRelease"] = "$applicationId@$versionName"
         manifestPlaceholders["sentryDsn"] = System.getenv("SENTRY_DSN") ?: ""
 
+        // Read environment variables and add them to the BuildConfig
+        buildConfigField("String", "MSH_AES_KEY", "\"${System.getenv("MSH_AES_KEY") ?: ""}\"")
+        buildConfigField("String", "MSH_AES_IV", "\"${System.getenv("MSH_AES_IV") ?: ""}\"")
+
+
         bundle {
             language {
                 enableSplit = false

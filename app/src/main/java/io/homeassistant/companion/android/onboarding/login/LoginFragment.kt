@@ -93,7 +93,36 @@ class LoginFragment : Fragment() {
                             // Save credentials to UserSession
                             HassioUserSession.externalUrl = webviewCredentials.externalUrl
                             HassioUserSession.webviewUsername = webviewCredentials.username
-                            HassioUserSession.webviewPassword = webviewCredentials.password
+                            // HassioUserSession.webviewPassword = webviewCredentials.password
+
+                            if(webviewCredentials.password.isNullOrEmpty()){
+                                Log.e("LoginFragment", "webviewCredentials Password is null or empty")
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(requireContext(), "WebCred Pass is Empty", Toast.LENGTH_SHORT).show()
+                                }
+                                return@launch
+                            }
+
+                            try {
+                                // Create an instance of CryptoUtil
+                                val cryptoUtil = CryptoUtil()
+
+                                // Attempt to decrypt the password
+                                val decryptedPassword = cryptoUtil.aes256CbcPkcs7Decrypt(
+                                webviewCredentials.password.toString()
+                                )
+
+                                // Save decrypted password to the session
+                                HassioUserSession.webviewPassword = decryptedPassword
+
+                            } catch (e: Exception) {
+                                // Log error and show a Toast message for decryption failure
+                                Log.e("CryptoUtil", "Password decryption failed: ${e.message}")
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(requireContext(), "Password decryption failed", Toast.LENGTH_LONG).show()
+                                }
+                                return@launch // Exit if decryption fails
+                            }
 
                             loginNavigation() // Proceed with the next step
                         } else {
