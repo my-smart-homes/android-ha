@@ -7,11 +7,15 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import io.homeassistant.companion.android.R
 import io.homeassistant.companion.android.onboarding.discovery.DiscoveryFragment
 import io.homeassistant.companion.android.onboarding.login.LoginFragment
 import io.homeassistant.companion.android.onboarding.manual.ManualSetupFragment
+import io.homeassistant.companion.android.util.DialogUtils
+import io.homeassistant.companion.android.util.VersionChecker
 import io.homeassistant.companion.android.util.compose.HomeAssistantAppTheme
+import kotlinx.coroutines.launch
 
 class WelcomeFragment : Fragment() {
 
@@ -20,6 +24,9 @@ class WelcomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        // Check for app update
+        checkForAppUpdate()
+
         return ComposeView(requireContext()).apply {
             setContent {
                 HomeAssistantAppTheme {
@@ -27,6 +34,14 @@ class WelcomeFragment : Fragment() {
                         onContinue = { welcomeNavigation() }
                     )
                 }
+            }
+        }
+    }
+
+    private fun checkForAppUpdate() {
+        lifecycleScope.launch {
+            VersionChecker.checkForUpdate(requireContext()) {
+                DialogUtils.showUpdateDialog(requireContext())
             }
         }
     }

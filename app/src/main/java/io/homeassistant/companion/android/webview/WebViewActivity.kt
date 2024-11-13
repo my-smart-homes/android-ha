@@ -96,9 +96,11 @@ import io.homeassistant.companion.android.settings.server.ServerChooserFragment
 import io.homeassistant.companion.android.themes.ThemesManager
 import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.DataUriDownloadManager
+import io.homeassistant.companion.android.util.DialogUtils
 import io.homeassistant.companion.android.util.LifecycleHandler
 import io.homeassistant.companion.android.util.OnSwipeListener
 import io.homeassistant.companion.android.util.TLSWebViewClient
+import io.homeassistant.companion.android.util.VersionChecker
 import io.homeassistant.companion.android.util.isStarted
 import io.homeassistant.companion.android.websocket.WebsocketManager
 import io.homeassistant.companion.android.webview.WebView.ErrorType
@@ -234,6 +236,7 @@ class WebViewActivity : BaseActivity(), io.homeassistant.companion.android.webvi
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        checkForAppUpdate()
         if (
             intent.extras?.containsKey(EXTRA_SHOW_WHEN_LOCKED) == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
@@ -1197,6 +1200,14 @@ class WebViewActivity : BaseActivity(), io.homeassistant.companion.android.webvi
                     (decor.getChildAt(3) as FrameLayout).layoutParams.height = videoHeight
                     decor.requestLayout()
                 }
+            }
+        }
+    }
+
+    private fun checkForAppUpdate() {
+        lifecycleScope.launch {
+            VersionChecker.checkForUpdate(this@WebViewActivity) {
+                DialogUtils.showUpdateDialog(this@WebViewActivity)
             }
         }
     }
