@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import io.homeassistant.companion.android.R
 import io.homeassistant.companion.android.onboarding.discovery.DiscoveryFragment
 import io.homeassistant.companion.android.onboarding.manual.ManualSetupFragment
@@ -201,8 +202,19 @@ class LoginFragment : Fragment() {
 
                 // Access the serverPasswords subcollection and get the first document
                 val serverPasswordsCollection = userDoc.reference.collection("serverPasswords")
-                val serverPasswordsSnapshot = serverPasswordsCollection.limit(1).get().await()
-                val firstServerPasswordDoc = serverPasswordsSnapshot.documents.firstOrNull()
+                val serverPasswordsSnapshot = serverPasswordsCollection.get().await()
+
+                Log.d("Firestore", "serverpass size: ${serverPasswordsSnapshot.size()}")
+                var firstServerPasswordDoc: DocumentSnapshot?
+                if (serverPasswordsSnapshot.documents.size > 1) {
+                    Log.d("Firestore", "Multiple serverPasswords found for user: $userId")
+                    val selectedDoc = ServerListChooser.showServerSelectionDialog(requireContext(), serverPasswordsSnapshot.documents)
+                    firstServerPasswordDoc = selectedDoc
+                } else {
+                        firstServerPasswordDoc = serverPasswordsSnapshot.documents.firstOrNull()
+                }
+
+//                throw Exception("MANUAL BREAK")
 
                 if (firstServerPasswordDoc != null) {
                     // Get the encrypted password
@@ -240,10 +252,9 @@ class LoginFragment : Fragment() {
                 null
             }
         } catch (e: Exception) {
-            Log.d("Firestore", "Error getting document: ", e)
+            Log.e("Firestore", "Error getting document: ", e)
             null
         }
     }
-
 }
 
