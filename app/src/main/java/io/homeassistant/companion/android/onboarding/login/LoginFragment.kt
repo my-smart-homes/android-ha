@@ -54,14 +54,17 @@ class LoginFragment : Fragment() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     auth.signInWithEmailAndPassword(username, password).await()
-                    Log.d("Firestore", "SignInSuccess")
+                    Log.d("Firestore", "SignInSuccess2")
 
                     val userId = auth.currentUser?.uid
+                    Log.d("Firestore", "user id ${userId}")
                     isLoading = false
 
                     if (userId != null) {
+                        Log.d("Firestore", "calling getWebViewCredentials")
                         // Fetch the external URL, webview username, and password from Firebase
                         val webviewCredentials = getWebViewCredentials(userId)
+                        Log.d("Firestore", "result getWebViewCredentials ${webviewCredentials?.expirationDate}")
 
                         if (webviewCredentials != null) {
                             val currentTime = serverTimeService.fetchServerTime()
@@ -184,13 +187,53 @@ class LoginFragment : Fragment() {
 
     private suspend fun getWebViewCredentials(userId: String): WebviewCredentials? {
         val db = FirebaseFirestore.getInstance()
+        Log.d("Firestore", "getWebViewCredentials init db")
         return try {
-            val document = db.collection("users").document(userId).get().await()
-            if (document.exists()) {
-                val externalUrl = document.getString("external_url")
-                val webviewUsername = document.getString("webview_username")
-                val webviewPassword = document.getString("webview_password")
-                val expirationDate = document.getTimestamp("expirationDate")?.toDate()?.time
+            val userDoc = db.collection("users").document(userId).get().await()
+            if (userDoc.exists()) {
+                // Get the email as the username
+                val webviewUsername = userDoc.getString("email")
+                // Get the expiration date from subscription.expiresAt
+                val expirationDate = userDoc.getTimestamp("subscription.expiresAt")?.toDate()?.time
+
+                var webviewPassword: String? = null
+                var externalUrl: String? = null
+
+                // Access the serverPasswords subcollection and get the first document
+                val serverPasswordsCollection = userDoc.reference.collection("serverPasswords")
+                val serverPasswordsSnapshot = serverPasswordsCollection.limit(1).get().await()
+                val firstServerPasswordDoc = serverPasswordsSnapshot.documents.firstOrNull()
+
+                if (firstServerPasswordDoc != null) {
+                    // Get the encrypted password
+                    webviewPassword = firstServerPasswordDoc.getString("encryptedPass")
+
+                    // Get the server ID (document ID)
+                    val serverId = firstServerPasswordDoc.id
+                    Log.d("Firestore", "First Server DOC: $serverId")
+
+                    // Access the servers collection to get the externalUrl
+                    val serverDoc = db.collection("servers").document(serverId).get().await()
+                    if (serverDoc.exists()) {
+                        externalUrl = serverDoc.getString("externalUrl")
+
+                        // After retrieving externalUrl from serverDoc
+                        if (externalUrl != null && !externalUrl.startsWith("http://") && !externalUrl.startsWith("https://")) {
+                            externalUrl = "https://$externalUrl"
+                        }
+
+                    } else {
+                        Log.d("Firestore", "No server found with ID: $serverId")
+                    }
+                } else {
+                    Log.d("Firestore", "No serverPasswords documents for user: $userId")
+                }
+
+                Log.d(
+                    "Firestore:LoginFragment",
+                    "webviewPassword: $webviewPassword, expirationDate: $expirationDate, externalUrl: $externalUrl"
+                )
+
                 WebviewCredentials(externalUrl, webviewUsername, webviewPassword, expirationDate)
             } else {
                 Log.d("Firestore", "No such document.")
