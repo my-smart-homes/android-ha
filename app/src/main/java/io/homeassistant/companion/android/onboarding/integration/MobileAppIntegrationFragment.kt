@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.OpenableColumns
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,15 +26,21 @@ import io.homeassistant.companion.android.R
 import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.util.DisabledLocationHandler
 import io.homeassistant.companion.android.onboarding.OnboardingViewModel
+import io.homeassistant.companion.android.onboarding.login.HassioUserSession
 import io.homeassistant.companion.android.onboarding.notifications.NotificationPermissionFragment
 import io.homeassistant.companion.android.sensors.LocationSensorManager
+import io.homeassistant.companion.android.util.MSHAutoWifiManager
 import io.homeassistant.companion.android.util.compose.HomeAssistantAppTheme
 import java.io.IOException
 import java.security.KeyStore
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MobileAppIntegrationFragment : Fragment() {
+
+    @Inject
+    lateinit var autoWifiManager: MSHAutoWifiManager
 
     private val requestLocationPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         onLocationPermissionResult(it)

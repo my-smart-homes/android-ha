@@ -96,6 +96,7 @@ class LoginFragment : Fragment() {
 
                             // Save credentials to UserSession
                             HassioUserSession.externalUrl = webviewCredentials.externalUrl
+                            HassioUserSession.internalUrl = webviewCredentials.internalUrl
                             HassioUserSession.webviewUsername = webviewCredentials.username
                             // HassioUserSession.webviewPassword = webviewCredentials.password
 
@@ -181,6 +182,7 @@ class LoginFragment : Fragment() {
 
     data class WebviewCredentials(
         val externalUrl: String?,
+        val internalUrl: String?,
         val username: String?,
         val password: String?,
         val expirationDate: Long?
@@ -199,6 +201,7 @@ class LoginFragment : Fragment() {
 
                 var webviewPassword: String? = null
                 var externalUrl: String? = null
+                var internalUrl: String? = null
 
                 // Access the serverPasswords subcollection and get the first document
                 val serverPasswordsCollection = userDoc.reference.collection("serverPasswords")
@@ -228,10 +231,16 @@ class LoginFragment : Fragment() {
                     val serverDoc = db.collection("servers").document(serverId).get().await()
                     if (serverDoc.exists()) {
                         externalUrl = serverDoc.getString("externalUrl")
+                        internalUrl = serverDoc.getString("internalUrl")
+
 
                         // After retrieving externalUrl from serverDoc
                         if (externalUrl != null && !externalUrl.startsWith("http://") && !externalUrl.startsWith("https://")) {
                             externalUrl = "https://$externalUrl"
+                        }
+
+                        if (internalUrl != null && !internalUrl.startsWith("http://") && !internalUrl.startsWith("https://")) {
+                            internalUrl = "http://$internalUrl"
                         }
 
                     } else {
@@ -246,7 +255,7 @@ class LoginFragment : Fragment() {
                     "webviewPassword: $webviewPassword, expirationDate: $expirationDate, externalUrl: $externalUrl"
                 )
 
-                WebviewCredentials(externalUrl, webviewUsername, webviewPassword, expirationDate)
+                WebviewCredentials(externalUrl, internalUrl, webviewUsername, webviewPassword, expirationDate)
             } else {
                 Log.d("Firestore", "No such document.")
                 null

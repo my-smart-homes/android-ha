@@ -89,6 +89,7 @@ import io.homeassistant.companion.android.databinding.ActivityWebviewBinding
 import io.homeassistant.companion.android.databinding.DialogAuthenticationBinding
 import io.homeassistant.companion.android.launch.LaunchActivity
 import io.homeassistant.companion.android.nfc.WriteNfcTag
+import io.homeassistant.companion.android.onboarding.login.HassioUserSession
 import io.homeassistant.companion.android.sensors.SensorReceiver
 import io.homeassistant.companion.android.sensors.SensorWorker
 import io.homeassistant.companion.android.settings.SettingsActivity
@@ -98,6 +99,7 @@ import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.DataUriDownloadManager
 import io.homeassistant.companion.android.util.DialogUtils
 import io.homeassistant.companion.android.util.LifecycleHandler
+import io.homeassistant.companion.android.util.MSHAutoWifiManager
 import io.homeassistant.companion.android.util.OnSwipeListener
 import io.homeassistant.companion.android.util.TLSWebViewClient
 import io.homeassistant.companion.android.util.VersionChecker
@@ -196,6 +198,9 @@ class WebViewActivity : BaseActivity(), io.homeassistant.companion.android.webvi
     @Inject
     @Named("keyChainRepository")
     lateinit var keyChainRepository: KeyChainRepository
+
+    @Inject
+    lateinit var autoWifiManager: MSHAutoWifiManager
 
     private lateinit var binding: ActivityWebviewBinding
     private lateinit var webView: WebView
@@ -680,6 +685,12 @@ class WebViewActivity : BaseActivity(), io.homeassistant.companion.android.webvi
                 }
             }
         }
+
+        Log.d(TAG, "HassioUserSession.internalUrl ${HassioUserSession.internalUrl}");
+        if(HassioUserSession.internalUrl!=null){
+            autoWifiManager.autoAddCurrentWifiToAllServers()
+        }
+
     }
 
     private fun webViewAddJavascriptInterface() {
