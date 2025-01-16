@@ -20,7 +20,7 @@ import android.widget.TextView
 import io.homeassistant.companion.android.R
 
 class ServerListChooser {
-    data class ServerItem(val name: String, val url: String, val doc: DocumentSnapshot)
+    data class ServerItem(val name: String, val doc: DocumentSnapshot)
 
     companion object {
         lateinit var dialog: AlertDialog
@@ -52,8 +52,7 @@ class ServerListChooser {
                     val server = servers[position]
 
                     serverIcon.setImageResource(R.drawable.app_icon_round)
-                    serverName.text = "Home ${position + 1}"
-                    serverUrl.text = server.url
+                    serverName.text = server.name
                     serverId.text = server.doc.id
 
                     return view
@@ -73,11 +72,10 @@ class ServerListChooser {
                             .get()
                             .await()
 
-                        val serverName = serverDoc.getString("name") ?: serverId
-                        val serverUrl = serverDoc.getString("externalUrl") ?: ""
-                        serverItems.add(ServerItem(serverName, serverUrl, doc))
+                        val serverName = serverDoc.getString("homeName") ?: serverId
+                        serverItems.add(ServerItem(serverName, doc))
                     } catch (e: Exception) {
-                        serverItems.add(ServerItem(serverId, "", doc))
+                        serverItems.add(ServerItem(serverId, doc))
                     }
                 }
 
