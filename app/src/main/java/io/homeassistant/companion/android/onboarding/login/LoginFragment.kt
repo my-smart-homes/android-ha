@@ -29,17 +29,38 @@ import kotlinx.coroutines.tasks.await
 
 class LoginFragment : Fragment() {
 
+    companion object {
+        var wifiSsid: String = "msh"
+            private set
+    }
+
     private var isLoading by mutableStateOf(false)
+    private var showWifiDialog by mutableStateOf(false)
+    private var _wifiSsid by mutableStateOf("msh")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-
         return ComposeView(requireContext()).apply {
             setContent {
                 HomeAssistantAppTheme {
-                    LoginView(
-                        onLoginClick = { username, password -> loginUserWithFirebase(username, password)},
-                        isLoading = isLoading
-                    )
+                    if (showWifiDialog) {
+                        WifiSsidDialog(
+                            onDismiss = {
+                                showWifiDialog = false
+                                loginNavigation()
+                            },
+                            onConfirm = { ssid ->
+                                _wifiSsid = ssid
+                                wifiSsid = ssid
+                                showWifiDialog = false
+                                loginNavigation()
+                            }
+                        )
+                    } else {
+                        LoginView(
+                            onLoginClick = { username, password -> loginUserWithFirebase(username, password)},
+                            isLoading = isLoading
+                        )
+                    }
                 }
             }
         }
@@ -51,6 +72,8 @@ class LoginFragment : Fragment() {
             isLoading = true
             val auth = FirebaseAuth.getInstance()
             val serverTimeService: ServerTimeFetchService = ServerTimeFetchServiceImpl()
+            
+
             // Use coroutines to handle Firebase calls
             CoroutineScope(Dispatchers.IO).launch {
                 try {
@@ -88,7 +111,13 @@ class LoginFragment : Fragment() {
 
                             CoroutineScope(Dispatchers.Main).launch {
                                 Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
+                                
+                                // Show Wi-Fi SSID dialog after successful login
+                                showWifiDialog = true
                             }
+
+                            // Print WiFi comparison
+                            Log.d("WiFi", "Stored WiFi: ${LoginFragment.wifiSsid}")
 
                             Log.d("Firestore", "External URL: ${webviewCredentials.externalUrl}")
                             Log.d("Firestore", "Webview Username: ${webviewCredentials.username}")
@@ -128,8 +157,6 @@ class LoginFragment : Fragment() {
                                 }
                                 return@launch // Exit if decryption fails
                             }
-
-                            loginNavigation() // Proceed with the next step
                         } else {
                             Log.d("Firestore", "No webview credentials found for this user.")
                         }

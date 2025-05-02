@@ -6,6 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.homeassistant.companion.android.common.data.servers.ServerManager
 import io.homeassistant.companion.android.common.data.wifi.WifiHelper
 import io.homeassistant.companion.android.onboarding.login.HassioUserSession
+import io.homeassistant.companion.android.onboarding.login.LoginFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,7 +35,11 @@ class MSHAutoWifiManager @Inject constructor(
                     return@launch
                 }
 
-                val currentSsid = wifiHelper.getWifiSsid()?.removeSurrounding("\"")
+                // Use the SSID from LoginFragment if available, otherwise get current SSID
+                val currentSsid = LoginFragment.wifiSsid ?: wifiHelper.getWifiSsid()?.removeSurrounding("\"")
+                // print current ssid
+                Log.d("AutoWifiManager", LoginFragment.wifiSsid)
+                Log.d(TAG, "Current SSID: $currentSsid")
                 if (currentSsid.isNullOrBlank()) {
                     Log.d(TAG, "No valid SSID found")
                     return@launch
