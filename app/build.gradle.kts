@@ -25,8 +25,8 @@ android {
         minSdk = libs.versions.androidSdk.min.get().toInt()
         targetSdk = libs.versions.androidSdk.target.get().toInt()
 
-        versionName = "0.2"
-        versionCode = 2
+        versionName = "0.3"
+        versionCode = 3
 
         manifestPlaceholders["sentryRelease"] = "$applicationId@$versionName"
         manifestPlaceholders["sentryDsn"] = System.getenv("SENTRY_DSN") ?: ""
