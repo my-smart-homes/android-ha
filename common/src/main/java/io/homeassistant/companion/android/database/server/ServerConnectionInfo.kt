@@ -94,6 +94,10 @@ data class ServerConnectionInfo(
     fun isHomeWifiSsid(): Boolean = wifiHelper.isUsingSpecificWifi(internalSsids)
 
     fun isInternal(): Boolean {
+        // Print current WiFi name
+        val currentWifiName = wifiHelper.getWifiSsid()?.removeSurrounding("\"")
+        Log.d("WiFi", "Current WiFi Name: $currentWifiName")
+
         val usesInternalSsid = wifiHelper.isUsingSpecificWifi(internalSsids)
         val usesWifi = wifiHelper.isUsingWifi()
         val localUrl = internalUrl
